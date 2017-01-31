@@ -1,0 +1,28 @@
+<!--
+    Checks to see if CopyTo.txt exists in a relative location. If it exists,
+    the file should contain a directory on each line where the output of the
+    project should be copied to.
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <RootCopyToDirectory>$(MSBuildThisFileDirectory)..\</RootCopyToDirectory>
+        <CopyToFile>$(RootCopyToDirectory)CopyTo.txt</CopyToFile>
+    </PropertyGroup>
+    <Target Name="CopyOutputIfFileExists" Condition="Exists($(CopyToFile))">
+		<ReadLinesFromFile File="$(CopyToFile)">
+			<Output TaskParameter="Lines" ItemName="CopyToDirectories" />
+		</ReadLinesFromFile>
+		<Message Text="CopyToDirectories = %(CopyToDirectories.Identity)" />
+		<ItemGroup>
+			<ItemsToCopy Include="$(OutputPath)\**\*" />
+		</ItemGroup>
+		<Message Text="ItemsToCopy = @(ItemsToCopy, ';')" />
+		<CreateItem Include="@(ItemsToCopy)" AdditionalMetadata="CopyToDirectory=$(RootCopyToDirectory)%(CopyToDirectories.Identity)">
+			<Output ItemName="ItemsToCopyWithCopyToDirectory" TaskParameter="Include"/>
+		</CreateItem>
+		<Message Text="%(ItemsToCopyWithCopyToDirectory.Identity)->%(ItemsToCopyWithCopyToDirectory.CopyToDirectory)" />
+		<Copy
+			SourceFiles="@(ItemsToCopyWithCopyToDirectory)"
+			DestinationFiles="@(ItemsToCopyWithCopyToDirectory->'%(CopyToDirectory)\%(RecursiveDir)\%(Filename)%(Extension)')"/>
+	</Target>
+</Project>
